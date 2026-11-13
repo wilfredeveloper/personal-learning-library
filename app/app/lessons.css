@@ -1,0 +1,99 @@
+/* WP12: the "next lesson" panel on the course page (NextLesson) and the
+   lesson-ready banner on every page (LessonNotifier). */
+
+.nl {
+  margin: 0 0 28px;
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+.nl-status { margin-bottom: 12px; }
+.nl-status:only-child { margin-bottom: 0; }
+.nl-line { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--ink); }
+.nl-progress {
+  margin: 6px 0 10px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.nl-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: nl-pulse 1.4s ease-in-out infinite;
+}
+@keyframes nl-pulse { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .nl-dot { animation: none; } }
+.nl-link { color: var(--accent); font-weight: 600; }
+.nl-warn { margin: 6px 0 0; font-size: 0.82rem; color: var(--muted); }
+.nl-bad { color: #b3261e; }
+@media (prefers-color-scheme: dark) { .nl-bad { color: #f2b8b5; } }
+
+.nl-btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+  cursor: pointer;
+}
+.nl-btn:disabled { opacity: 0.6; cursor: default; }
+.nl-btn.nl-quiet { background: transparent; color: var(--accent); }
+.nl-form label { display: block; margin-bottom: 6px; color: var(--ink); }
+.nl-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  resize: vertical;
+}
+.nl-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.nl-row small { color: var(--muted); font-size: 0.8rem; }
+
+.ln-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+.ln-banner {
+  pointer-events: auto;
+  max-width: 420px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+  border-left-width: 4px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.12);
+}
+.ln-banner p { margin: 0; flex: 1; }
+.ln-banner a { color: var(--accent); font-weight: 600; white-space: nowrap; }
+.ln-banner button {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.ln-banner.ln-failed { border-color: #b3261e; }

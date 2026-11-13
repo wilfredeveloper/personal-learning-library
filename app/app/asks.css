@@ -1,0 +1,64 @@
+/* The asks (WP6): the "From last time" panel over the canvas or reader, and the
+   "Done for today" line in the top bar. Same look as the canvas cards: paper, ink
+   hairlines, lime dot. Classes are prefixed ask-. */
+
+.ask-panel { position: absolute; z-index: 6; top: 12px; left: 16px; width: min(360px, calc(100% - 32px)); max-height: calc(100% - 72px);
+  display: flex; flex-direction: column; background: var(--card); color: var(--ink); border: 1px solid var(--ink); border-left: 4px solid var(--acid);
+  box-shadow: 0 14px 30px -22px rgba(25, 34, 31, 0.6); font-family: var(--font-display); cursor: auto; animation: ask-in 0.22s ease-out; }
+@keyframes ask-in { from { opacity: 0; transform: translateY(-6px); } }
+.ask-panel > header { display: flex; align-items: center; gap: 10px; padding: 9px 12px; flex: none; }
+.ask-toggle { flex: 1; display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 0; text-align: left;
+  font: 600 0.85rem/1.2 var(--font-display); letter-spacing: -0.01em; color: var(--ink); cursor: pointer; }
+.ask-toggle::after { content: "▾"; font-size: 0.7rem; color: var(--muted); }
+.ask-toggle[aria-expanded="false"]::after { content: "▸"; }
+.ask-toggle small { font: 400 0.68rem var(--font-mono); color: var(--muted); }
+.ask-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--acid); border: 1px solid var(--ink); flex: none; }
+.ask-skip { border: 0; background: none; padding: 0; font: 500 0.75rem var(--font-display); color: var(--muted); cursor: pointer; text-decoration: underline; }
+.ask-skip:hover { color: var(--ink); }
+
+.ask-body { overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 12px; border-top: 1px solid var(--rule); }
+.ask-lead { margin: 10px 0 4px; font: 400 0.8rem/1.4 var(--font-display); color: var(--muted); }
+.ask-lead b { color: var(--ink); font-weight: 600; }
+.ask-clear ul { list-style: none; margin: 0; padding: 0; }
+.ask-clear li { display: flex; align-items: center; gap: 6px; padding: 6px 0; border-top: 1px solid var(--rule); font: 500 0.85rem/1.3 var(--font-display); }
+.ask-clear li:first-child { border-top: 0; }
+.ask-clear li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ask-clear li button { flex: none; border: 1px solid var(--ink); background: none; padding: 4px 10px; font: 600 0.72rem var(--font-display); color: var(--ink); cursor: pointer; }
+.ask-clear li button:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+.ask-clear li button:disabled { cursor: default; opacity: 0.45; }
+.ask-clear li button.on { opacity: 1; }
+.ask-clear li button.on.yes { background: var(--win); color: #fff; border-color: var(--win); }
+.ask-clear li button.on.no { background: #e0664f; color: #fff; border-color: #e0664f; }
+.ask-line { margin: 10px 0 0; font: 400 0.78rem/1.45 var(--font-display); color: var(--muted); }
+
+.ask-kicker { margin: 12px 0 8px; font: 500 0.6rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.ask-q + .ask-q { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.ask-q p { margin: 0 0 8px; font: 500 0.86rem/1.4 var(--font-display); }
+.ask-q div { display: grid; gap: 6px; }
+.ask-q button { border: 1px solid var(--rule); background: var(--paper); padding: 7px 9px; text-align: left; font: 400 0.8rem/1.35 var(--font-body); color: var(--ink); cursor: pointer; }
+.ask-q button:hover:not(:disabled) { border-color: var(--ink); }
+.ask-q button:disabled { cursor: default; }
+.ask-q button.right { background: color-mix(in srgb, var(--win) 18%, var(--card)); border-color: var(--win); }
+.ask-q button.wrong { background: color-mix(in srgb, #c4553d 18%, var(--card)); border-color: #c4553d; }
+.ask-q button.dim { opacity: 0.5; }
+.ask-q small { display: block; margin-top: 6px; font: 600 0.72rem var(--font-display); }
+.ask-ok { color: var(--win); }
+.ask-no { color: #c4553d; }
+.ask-panel button:focus-visible, .ask-end :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* "Done for today" in the top bar */
+.ask-end { position: relative; flex: none; }
+.ask-end-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.ask-end-btn:hover, .ask-end-btn[aria-expanded="true"] { color: var(--ink); }
+.ask-pop { position: fixed; z-index: 20; top: 52px; right: 16px; width: min(340px, calc(100vw - 32px)); padding: 12px 14px; background: var(--card); color: var(--ink);
+  border: 1px solid var(--ink); border-left: 4px solid var(--acid); box-shadow: 0 14px 30px -22px rgba(25, 34, 31, 0.6); animation: ask-in 0.18s ease-out; }
+.ask-pop label { display: block; font: 600 0.82rem/1.3 var(--font-display); }
+.ask-pop label small { font: 400 0.68rem var(--font-mono); color: var(--muted); margin-left: 4px; }
+.ask-pop input { display: block; width: 100%; margin-top: 8px; padding: 7px 9px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink);
+  font: 400 0.85rem/1.4 var(--font-body); box-sizing: border-box; }
+.ask-pop input:focus { outline: none; border-color: var(--ink); }
+.ask-pop > div { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+.ask-go { border: 1px solid var(--ink); background: var(--ink); color: var(--paper); padding: 6px 14px; font: 600 0.78rem var(--font-display); cursor: pointer; }
+.ask-go:hover { background: var(--accent); border-color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) { .ask-panel, .ask-pop { animation: none; } }

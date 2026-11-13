@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Same pipe, different brain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=Gelasio:ital,wght@0,400;0,600;1,400&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body,{delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<link rel="stylesheet" href="../assets/course.css">
+<style>
+  .eq { margin: 1rem 0; padding: 0.3rem 0; overflow-x: auto; overflow-y: hidden; }
+  .gloss { font-size: var(--step--1); color: var(--muted); margin: -0.4rem 0 1.1rem; }
+  .gloss b { color: var(--ink); }
+  .contrast { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 1.2rem 0; }
+  .contrast > div { border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); padding: 0.8rem 0.9rem; font-size: var(--step--1); line-height: 1.5; }
+  .contrast h4 { margin: 0 0 0.4rem; font: 700 0.8rem/1.2 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; }
+  .contrast .lm h4 { color: var(--accent); }
+  .contrast p { margin: 0 0 0.4rem; }
+  @media (max-width: 560px) { .contrast { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main class="page">
+<div class="column">
+
+  <nav class="crumbs" aria-label="Course navigation">
+    <a href="../../index.html">Library</a>
+    <a href="../index.html">Course map</a>
+    <a href="../reference/0001-pipe-and-loop.html">Cheat sheet: the pipe and the loop</a>
+  </nav>
+
+  <p class="eyebrow" style="margin-top:2rem">Lesson 1 · The pipe</p>
+  <h1>Same pipe, different brain</h1>
+  <p class="lede">Section 1 of the repo is twenty lines of if-statements that type their answer at you word by word, just like ChatGPT.
+  By the end of this lesson you'll be able to trace one reply byte by byte through the repo's streaming pipe, and say in one equation
+  what an LLM puts at the far end of that pipe that ELIZA doesn't.</p>
+  <div class="meta"><span><b>15 min</b> to complete</span><span><b>6 questions</b></span><span>Repo: <b>§1 Simple Chat</b></span></div>
+
+  <div class="pipeline" data-map="how-llms-work" data-here="chat"></div>
+  <p class="pipeline-cap">The course follows the repo's five sections in order. Each lesson is a companion to one stop on this map.</p>
+
+  <div class="quiz" data-correct="a">
+    <p class="q"><b>Warm-up.</b> When a chatbot reads your prompt, what units does the model actually see?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Tokens a tokenizer makes</button>
+      <button class="opt" data-k="b" data-hint="Models never see characters directly; they see the units a tokenizer makes.">Characters the user typed</button>
+      <button class="opt" data-k="c" data-hint="Words are close, but a tokenizer often splits one word into several pieces.">Whole words of the prompt</button>
+    </div>
+    <p class="why" hidden>Tokens. Keep that word: today you'll see the reply come back one token at a time too, and lesson 4 builds a tokenizer (BPE) from scratch.</p>
+  </div>
+
+  <h2>Run it first</h2>
+  <p>From the repo root, <code>pnpm dev</code>, open the URL it prints, pick <b>Simple Chat</b> and type <code>I feel tired today</code>.
+  The reply appears one word at a time. Now look at the raw bytes instead of the page. With the dev server running (swap in your port):</p>
+  <figure class="codeblock"><pre>curl -N -X POST localhost:5173/simple-chat \
+  -H 'content-type: application/json' -d '{"message":"I feel tired today"}'</pre>
+  <figcaption>-N turns off curl's buffering, so each event prints the moment it arrives.</figcaption></figure>
+  <p>This is what came back on one run. It took <b>2.2 s</b>:</p>
+  <figure class="codeblock"><pre>event: start
+data: {}
+
+event: word
+data: {"word":"Why"}
+
+event: word
+data: {"word":"do"}
+<span style="color:var(--muted)">… you, feel, tired …</span>
+event: word
+data: {"word":"today?"}
+
+event: done
+data: {}
+</pre><figcaption>The text/event-stream format: a field name, a colon, a value. A blank line ends each event.</figcaption></figure>
+
+  <h2>The brain: twenty lines of string matching</h2>
+  <p>Everything "intelligent" about this chatbot is <code>getSimpleChatResponse</code>, a chain of checks in the spirit of
+  <a href="https://dl.acm.org/doi/10.1145/365153.365168">Weizenbaum's ELIZA (1966)</a>:</p>
+  <figure class="codeblock"><pre>const iFeel = "i feel";
+if (messageLower.startsWith(iFeel)) {
+  const feeling = messageLower.slice(iFeel.length + 1).replace(" i ", " you ");
+  return <mark>`Why do you feel ${feeling}?`</mark>;
+}</pre><figcaption>Quoted from <a href="https://github.com/w3cj/how-llms-work/blob/main/src/routes/simple-chat.ts">w3cj/how-llms-work, src/routes/simple-chat.ts:72–76</a> · greeting, "i feel", "my X", "worried", else a random "Please go on."</figcaption></figure>
+  <span class="note"><b>Why ELIZA still matters</b>It used only this kind of string surgery, yet people confided in it. Weizenbaum wrote the paper partly to show how little was going on inside.</span>
+  <p>Notice the return type: one <code>string</code>, the <em>whole</em> reply. The function is done before any streaming starts.</p>
+
+  <h2>The pipe: four hops from function to pixels</h2>
+  <figure class="wide">
+    <div class="flow">
+      <div class="stage io"><b>Brain</b><span>simple-chat.ts:97</span></div><span class="arrow">→</span>
+      <div class="stage"><b>emit()</b><span>server/lib/sse.ts:42</span></div><span class="arrow">→</span>
+      <div class="stage"><b>Wire</b><span>text/event-stream</span></div><span class="arrow">→</span>
+      <div class="stage"><b>readSSE()</b><span>client/lib/sse.ts:32</span></div><span class="arrow">→</span>
+      <div class="stage io"><b>Hook</b><span>use-simple-chat.ts:10</span></div>
+    </div>
+  </figure>
+  <p><b>1. Route.</b> The handler splits the reply on spaces and emits a <code>start</code> event, one <code>word</code> event per word, then
+  <code>done</code> (<code>simple-chat.ts:100–106</code>).</p>
+  <p><b>2. Emit.</b> <code>emit(data, event, delay)</code> writes one event with <code>JSON.stringify(data)</code>, then <em>sleeps</em>
+  for <code>delay</code> ms. The pacing is deliberate: 1000 ms after <code>start</code>, 200 ms after each word. So the 2.2 s is
+  \(1000 + 6 \times 200 = 2200\) ms. Nothing was being "thought" during those sleeps.</p>
+  <p><b>3. Wire.</b> One HTTP response that stays open. The browser spec says each <code>data:</code> line adds to the event's data, and
+  <b>a blank line dispatches the event</b>. If the stream ends before that blank line, the half-event is thrown away
+  (<a href="https://html.spec.whatwg.org/multipage/server-sent-events.html">WHATWG HTML, §9.2</a>).</p>
+  <p><b>4. Read.</b> <code>readSSE</code> pulls raw chunks off <code>response.body</code>. A chunk can end mid-line, so it splits on
+  <code>\n</code> and puts the unfinished last piece back: <code>buffer = lines.pop()</code> (<code>client/lib/sse.ts:90–91</code>).
+  Each complete <code>data: </code> line is JSON-parsed and handed to the hook, which appends the word and re-renders the bubble.</p>
+  <span class="note"><b>Same plumbing, different routes</b>Every section of the repo streams this way: BPE merge steps, training epochs, generated samples. You'll see this pipe in every lesson.</span>
+
+  <h2>Two brains, one pipe</h2>
+  <p>Below is the pipe, simulated in the page with the same event shapes. Send a message with <b>ELIZA rules</b> (a faithful port of
+  the repo's function), then switch to the <b>toy language model</b> and send again. Watch the left pane: that's the difference this whole
+  course is about.</p>
+
+  <div class="streamlab" data-message="I feel tired today"></div>
+  <p class="pipecap" style="font-size:var(--step--1);color:var(--muted)">The toy model is a hand-written table that only looks one token
+  back. It isn't trained, which is why it sometimes rambles. Lessons 6–9 replace it with the repo's real transformer.</p>
+
+  <div class="contrast">
+    <div><h4>ELIZA</h4><p>The reply is a deterministic function of the message: \(\text{reply} = f(\text{message})\).</p>
+    <p>The whole reply exists before byte one. Streaming is <b>presentation</b>: the future words are already queued.</p></div>
+    <div class="lm"><h4>A language model</h4><p>The reply is <b>sampled</b> one token at a time, each from a probability distribution.</p>
+    <p>Token 3 <b>does not exist</b> until token 2 has been chosen and fed back in. Streaming is the <b>computation itself</b> leaking out.</p></div>
+  </div>
+
+  <h2>The equation at the end of the pipe</h2>
+  <p>A <b>language model</b> is a function that takes the tokens so far and returns a probability for every token in its vocabulary
+  being next:</p>
+  <div class="eq">\[ p_\theta(x_t \mid x_{&lt;t}) \]</div>
+  <p class="gloss">Read it as "the probability of token \(x_t\) at position \(t\), <b>given</b> (the bar \(\mid\)) all the tokens before it,
+  \(x_{&lt;t} = x_1, \dots, x_{t-1}\)." The subscript \(\theta\) (theta) names the model's <b>parameters</b>, the numbers training adjusts.
+  For the toy model those are just the table entries. For the repo's transformer they're every weight matrix it trains (lesson 7 counts them with <code>countParams</code>).</p>
+
+  <p>Why is "next token, given the past" enough to score a whole reply? Because of the <b>chain rule of probability</b>. It follows from the
+  definition of conditional probability, \(P(A, B) = P(A)\,P(B \mid A)\), applied over and over. For three tokens:</p>
+  <div class="eq">\[ P(x_1, x_2, x_3) = P(x_1)\; P(x_2 \mid x_1)\; P(x_3 \mid x_1, x_2), \]</div>
+  <p class="gloss">and for any length \(T\), with \(\prod\) meaning "multiply together for \(t = 1\) up to \(T\)":</p>
+  <div class="eq">\[ P(x_1, \dots, x_T) = \prod_{t=1}^{T} p_\theta(x_t \mid x_{&lt;t}). \]</div>
+  <p class="gloss">That's the <b>P(reply)</b> line in the simulator: one factor per token, each the bar height of the token that was picked.
+  No approximation is involved. Any distribution over sequences can be written this way. The <em>modelling</em> choice is how
+  \(p_\theta\) computes each factor: one token back for the toy, the whole context via attention for a transformer.</p>
+
+  <p><b>Generation</b> runs the equation forwards. <b>Sample</b> (draw at random, weighted by probability) a token from the distribution,
+  append it, and ask again:</p>
+  <div class="eq">\[ x_t \sim p_\theta(\,\cdot \mid x_{&lt;t}), \qquad t = 1, 2, \dots \text{ until an end token.} \]</div>
+  <p class="gloss">The \(\sim\) means "is drawn from", and the dot \(\cdot\) stands for "any token". This loop is literally
+  <code>generateText</code> in <code>src/routes/train-transformer/transformer.ts:832–905</code>. It runs a forward pass on the context, takes the
+  last position's scores, turns them into probabilities, samples one token, pushes it onto <code>ids</code>, and repeats.
+  Temperature and top-p, the two knobs in that function, get their own lesson (9).</p>
+
+  <p>One practical wrinkle. Multiply 200 probabilities of 0.5 and you get \(0.5^{200} \approx 6 \times 10^{-61}\), smaller than the smallest
+  number a 32-bit float can hold (about \(10^{-45}\)). It rounds to zero. So we work in logs, which turn the product into a sum:</p>
+  <div class="eq">\[ \log P(x_1, \dots, x_T) = \sum_{t=1}^{T} \log p_\theta(x_t \mid x_{&lt;t}). \]</div>
+  <p class="gloss">Each \(\log p\) is negative (since \(p \le 1\)), so the sum just grows more negative instead of vanishing. The negative of
+  this average is the <b>cross-entropy loss</b> the repo's transformer trains on. You'll meet it as <code>crossEntropyLoss</code> in lesson 8.</p>
+
+  <div class="key">
+    <p class="eyebrow">The one idea to keep</p>
+    <p>The streaming pipe (route → <code>emit</code> → event-stream → <code>readSSE</code> → hook) is <strong>identical</strong> for ELIZA and
+    for GPT. What differs is the brain. ELIZA computes the whole reply, then drips it out. An LLM computes
+    \(p_\theta(x_t \mid x_{&lt;t})\), samples one token, feeds it back, and repeats, so <strong>each streamed token is a fresh step of the
+    computation</strong>. The chain rule makes those per-token probabilities multiply into the probability of the whole reply.</p>
+  </div>
+
+  <h2>Check yourself</h2>
+  <p class="score" data-quiz-score></p>
+
+  <div class="quiz" data-correct="a">
+    <p class="q"><b>1.</b> In the repo's Simple Chat, when does the full reply first exist?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Before the first byte is sent</button>
+      <button class="opt" data-k="b" data-hint="getSimpleChatResponse returns the whole string at simple-chat.ts:97, before streamSSE starts.">After the last word is sent</button>
+      <button class="opt" data-k="c" data-hint="The browser only joins words it receives; the server built them all already.">Only once the browser renders</button>
+    </div>
+    <p class="why" hidden>Line 97 computes the full string; the loop at 103–105 only paces it out. That's the "presentation, not computation" half of the contrast.</p>
+  </div>
+
+  <div class="quiz" data-correct="c">
+    <p class="q"><b>2.</b> In the event-stream format, what makes the browser dispatch an event?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" data-hint="The format knows nothing about JSON; data is just text.">The closing brace of JSON</button>
+      <button class="opt" data-k="b" data-hint="Chunks are network-sized and can split an event anywhere.">Each new network chunk arrives</button>
+      <button class="opt" data-k="c">A blank line after data</button>
+    </div>
+    <p class="why" hidden>Per the WHATWG spec, the blank line dispatches. An event cut off before its blank line is discarded.</p>
+  </div>
+
+  <div class="quiz" data-correct="b">
+    <p class="q"><b>3.</b> Why does <code>readSSE</code> do <code>buffer = lines.pop()</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" data-hint="Look at what pop() returns: the last piece after the final newline.">The event name is unused</button>
+      <button class="opt" data-k="b">A line may arrive split</button>
+      <button class="opt" data-k="c" data-hint="Each complete line is parsed once; the buffer just waits for the rest.">JSON must be parsed twice</button>
+    </div>
+    <p class="why" hidden>A chunk can end mid-line. The last split piece may be incomplete, so it waits in the buffer until the next chunk finishes it.</p>
+  </div>
+
+  <div class="quiz" data-correct="a">
+    <p class="q"><b>4.</b> In an LLM, why can't token 3 be computed before token 2?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Token 3 is conditioned on it</button>
+      <button class="opt" data-k="b" data-hint="SSE can send events back to back; the limit is in the model, not the pipe.">SSE allows one event at once</button>
+      <button class="opt" data-k="c" data-hint="Sleeps are ELIZA's pacing trick; an LLM is busy computing instead.">The server sleeps between each token</button>
+    </div>
+    <p class="why" hidden>\(x_3 \sim p_\theta(\cdot \mid x_1, x_2)\): the distribution for token 3 takes token 2 as input, so token 2 must be chosen first.</p>
+  </div>
+
+  <div class="quiz" data-correct="b">
+    <p class="q"><b>5.</b> A two-token reply: the model gave its first token probability 0.5, then the second 0.4. What is \(P(\text{reply})\)?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" data-hint="The chain rule multiplies the factors; it doesn't add them.">0.90</button>
+      <button class="opt" data-k="b">0.20</button>
+      <button class="opt" data-k="c" data-hint="That's the average. The chain rule multiplies.">0.45</button>
+    </div>
+    <p class="why" hidden>\(0.5 \times 0.4 = 0.2\). In logs: \(\log 0.5 + \log 0.4 \approx -0.69 - 0.92 = -1.61\), and \(e^{-1.61} \approx 0.2\).</p>
+  </div>
+
+  <div class="quiz" data-correct="c">
+    <p class="q"><b>6.</b> Why do models add log-probabilities instead of multiplying probabilities?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" data-hint="Logs don't change which token is sampled; they change the arithmetic.">Logs make sampling more random</button>
+      <button class="opt" data-k="b" data-hint="This is about numbers inside the model, not the UI.">The browser cannot show decimals</button>
+      <button class="opt" data-k="c">Tiny products underflow to zero</button>
+    </div>
+    <p class="why" hidden>Hundreds of factors below 1 multiply to something smaller than a float can hold. A sum of logs stays a manageable negative number.</p>
+  </div>
+
+  <h2>Your turn: in the repo</h2>
+  <p>Do these with the repo open, then reply in the terminal with what you got:</p>
+  <ol>
+    <li><b>Predict, then measure.</b> Send <code>my dog is sick</code> with the <code>curl -N</code> line above. Before you run it, predict the
+    total time from the reply's word count. Paste me the wire output and the real time.</li>
+    <li><b>Read the code.</b> In JSON mode, <code>readSSE</code> <em>skips</em> every <code>event:</code> line (<code>client/lib/sse.ts:94</code>).
+    So how does <code>use-simple-chat.ts</code> tell a <code>word</code> event apart from <code>start</code> and <code>done</code>?</li>
+    <li><b>Change the brain.</b> Add one rule to <code>getSimpleChatResponse</code>: if the message contains <code>because</code>, reply
+    <code>Is that the real reason?</code>. Send me the diff. Did you have to touch the pipe at all?</li>
+  </ol>
+
+  <p><strong>Primary source.</strong> Read Jurafsky &amp; Martin, <a href="https://web.stanford.edu/~jurafsky/slp3/3.pdf"><em>Speech and Language
+  Processing</em> (3rd ed. draft), Chapter 3: N-gram Language Models</a>, from the start through the bigram model (about 15 minutes).
+  It derives the chain rule exactly as above. Its bigram model is what the toy simulator is: a next-word table that looks one word back.
+  For the history, skim the first two pages of <a href="https://dl.acm.org/doi/10.1145/365153.365168">Weizenbaum (1966)</a>.</p>
+
+  <div class="next">
+    <div class="card"><h3><a href="../reference/0001-pipe-and-loop.html">Cheat sheet: the pipe and the loop</a></h3><p>The four hops with file:line, the wire format, and the chain-rule and log formulas.</p></div>
+    <div class="card"><h3>Next: a neuron, and the XOR wall</h3><p>Section 2. Why one layer of weights can't learn XOR, and what a hidden layer buys. (Coming next.)</p></div>
+  </div>
+
+  <p class="ask"><strong>Stuck or curious?</strong> Ask me in the terminal. For example: "walk me through <code>streamSSE</code> in Hono",
+  "why doesn't the repo use the browser's <code>EventSource</code>?", or "how does ChatGPT's API stream tokens?" I'm your teacher for this course.</p>
+
+  <p class="ask" style="margin-top:0.6rem"><strong>Recall tomorrow.</strong> Without looking, write down the four hops of the pipe and the chain-rule
+  equation. Then check them against the cheat sheet.</p>
+
+</div>
+</main>
+<script src="../assets/pipeline.js"></script>
+<script src="../assets/tokenbars.js"></script>
+<script src="../assets/streamlab.js"></script>
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

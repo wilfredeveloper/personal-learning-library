@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How LLMs work, built from scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=Gelasio:ital,wght@0,400;0,600;1,400&display=swap">
+<link rel="stylesheet" href="assets/course.css">
+<style>
+  .hero { padding-block: 1rem 0.5rem; max-width: 62ch; }
+  .syllabus { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; gap: 0; border-top: 1px solid var(--rule); max-width: 760px; }
+  .syllabus li { display: grid; grid-template-columns: 3.2rem 1fr auto; gap: 0.25rem 1rem; align-items: baseline; padding: 0.95rem 0; border-bottom: 1px solid var(--rule); margin: 0; }
+  .syllabus .n { font: 700 0.95rem/1.4 var(--font-mono); color: var(--muted); }
+  .syllabus .t { font: 700 1.08rem/1.35 var(--font-display); min-width: 0; }
+  .syllabus .t a { color: var(--ink); text-decoration: none; }
+  .syllabus .t a:hover { color: var(--accent); }
+  .syllabus .d { grid-column: 2 / 3; font-size: var(--step--1); color: var(--muted); line-height: 1.5; }
+  .syllabus .s { grid-row: 1; grid-column: 3; font: 700 0.7rem/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; padding: 0.35rem 0.55rem; border-radius: 999px; white-space: nowrap; }
+  .s.open { background: var(--accent-soft); color: var(--accent); }
+  .s.soon { color: var(--muted); border: 1px solid var(--rule); }
+  .syllabus li.later .t { color: var(--muted); }
+  .part { font: 700 0.75rem/1 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 2.4rem 0 0; }
+  .refs { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); max-width: 760px; margin-top: 1rem; }
+  .refs a { display: block; padding: 1rem 1.1rem; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; text-decoration: none; color: var(--ink); }
+  .refs a:hover { border-color: var(--accent); }
+  .refs b { font-family: var(--font-display); display: block; margin-bottom: 0.2rem; }
+  .refs span { font-size: var(--step--1); color: var(--muted); }
+  @media (max-width: 520px) { .syllabus li { grid-template-columns: 2.4rem 1fr; } .syllabus .s { grid-column: 2; grid-row: auto; justify-self: start; } }
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="hero">
+    <p class="eyebrow">A companion to the how-llms-work repo</p>
+    <h1>How LLMs work, built from scratch</h1>
+    <p class="lede">Work through the repo section by section, from an if-statement chatbot to a transformer trained by hand,
+    with the mechanism, the maths and the exact file and line beside you.</p>
+  </div>
+  <div class="pipeline" data-map="how-llms-work"></div>
+
+  <p class="part">Part I · The pipe</p>
+  <ol class="syllabus">
+    <li><span class="n">01</span><span class="t"><a href="lessons/0001-same-pipe-different-brain.html">Same pipe, different brain</a></span><span class="s open">Open</span><span class="d">§1 Simple Chat. SSE streaming end to end, and the next-token equation an LLM puts where ELIZA's if-statements are.</span></li>
+  </ol>
+  <p class="part">Part II · Learning from mistakes</p>
+  <ol class="syllabus">
+    <li class="later"><span class="n">02</span><span class="t">A neuron, and the XOR wall</span><span class="s soon">Soon</span><span class="d">§2. Weighted sums, a step function, and why one layer can't separate XOR.</span></li>
+    <li class="later"><span class="n">03</span><span class="t">Backprop: the chain rule at work</span><span class="s soon">Soon</span><span class="d">§2. Gradients through a hidden layer, by hand, then in <code>train.ts</code>.</span></li>
+  </ol>
+  <p class="part">Part III · Text into numbers</p>
+  <ol class="syllabus">
+    <li class="later"><span class="n">04</span><span class="t">BPE: growing a vocabulary</span><span class="s soon">Soon</span><span class="d">§3. Merge the most frequent pair, repeat: how tokens are born.</span></li>
+    <li class="later"><span class="n">05</span><span class="t">Embeddings: meaning as geometry</span><span class="s soon">Soon</span><span class="d">§4. Skip-gram, negative sampling, and why similar words end up close.</span></li>
+  </ol>
+  <p class="part">Part IV · The transformer</p>
+  <ol class="syllabus">
+    <li class="later"><span class="n">06</span><span class="t">Self-attention, by hand</span><span class="s soon">Soon</span><span class="d">§5. Queries, keys, values, softmax and the causal mask.</span></li>
+    <li class="later"><span class="n">07</span><span class="t">The block: heads, residuals, layer norm</span><span class="s soon">Soon</span><span class="d">§5. Multi-head attention, the feed-forward layer, and the residual stream.</span></li>
+    <li class="later"><span class="n">08</span><span class="t">Training: cross-entropy and Adam</span><span class="s soon">Soon</span><span class="d">§5. The loss, the optimiser, and the workers that train in parallel.</span></li>
+    <li class="later"><span class="n">09</span><span class="t">Generating: temperature and top-p</span><span class="s soon">Soon</span><span class="d">§5. Back to the loop from lesson 1, now with the two knobs.</span></li>
+  </ol>
+
+  <p class="part">Cheat sheets</p>
+  <div class="refs">
+    <a href="reference/0001-pipe-and-loop.html"><b>The pipe and the loop</b><span>The four hops with file:line, the wire format, chain rule and log-probs.</span></a>
+  </div>
+</main>
+<script src="assets/pipeline.js"></script>
+</body>
+</html>

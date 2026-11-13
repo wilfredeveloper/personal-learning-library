@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PDF</title>
+<!--
+  A PDF from a lesson link, drawn for the canvas: every page as an image with pdf.js's text
+  layer over it, so the text can be highlighted and sent to Explore or the tutor like a lesson.
+  The page grows to its full height (the canvas sizes the frame to its content).
+  /pdf-view.html?url=<the PDF's address>; the bytes come from /api/page?raw=1 (the app's copy).
+-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/web/pdf_viewer.css" crossorigin="anonymous">
+<style>
+  html, body { margin: 0; background: #f4f6f2; }
+  body { padding: 16px 0 4px; font: 15px/1.5 Inter, system-ui, sans-serif; color: #19221f; }
+  .pg { position: relative; margin: 0 auto 16px; background: #fff; box-shadow: 0 1px 4px rgba(25, 34, 31, 0.18); }
+  .pg canvas { display: block; width: 100%; height: 100%; }
+  .msg { margin: 0; padding: 32px 40px; }
+  .textLayer ::selection { background: rgba(35, 75, 231, 0.28); }
+  /* passages already explored or asked about (the canvas sets this highlight) */
+  ::highlight(asked) { background-color: rgba(221, 245, 158, 0.7); color: transparent; }
+</style>
+</head>
+<body>
+<p class="msg" id="msg">Loading the PDF…</p>
+<script type="module">
+  import * as pdfjs from "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs";
+  pdfjs.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+
+  const WIDTH = 848; // fits the canvas's 880px page with a margin
+  const MAX_PAGES = 80;
+  const url = new URLSearchParams(location.search).get("url") ?? "";
+  const msg = document.getElementById("msg");
+  const name = decodeURIComponent(url.split("/").pop() || "PDF");
+  document.title = name;
+
+  try {
+    const pdf = await pdfjs.getDocument({ url: "/api/page?raw=1&url=" + encodeURIComponent(url) }).promise;
+    const info = (await pdf.getMetadata().catch(() => null))?.info;
+    if (info?.Title?.trim()) document.title = info.Title.trim();
+    msg.remove();
+    // sharp at the canvas's deeper zooms, without a huge bitmap per page
+    const ink = Math.min(2.5, (window.devicePixelRatio || 1) * 1.5);
+    const n = Math.min(pdf.numPages, MAX_PAGES);
+    for (let i = 1; i <= n; i++) {
+      const page = await pdf.getPage(i);
+      const vp = page.getViewport({ scale: WIDTH / page.getViewport({ scale: 1 }).width });
+      const box = document.createElement("div");
+      box.className = "pg";
+      box.style.width = `${vp.width}px`;
+      box.style.height = `${vp.height}px`;
+      box.style.setProperty("--scale-factor", String(vp.scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.floor(vp.width * ink);
+      canvas.height = Math.floor(vp.height * ink);
+      const text = document.createElement("div");
+      text.className = "textLayer";
+      box.append(canvas, text);
+      document.body.append(box);
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp, transform: [ink, 0, 0, ink, 0, 0] }).promise;
+      await new pdfjs.TextLayer({ textContentSource: page.streamTextContent(), container: text, viewport: vp }).render();
+      page.cleanup();
+    }
+    if (pdf.numPages > n) {
+      const more = document.createElement("p");
+      more.className = "msg";
+      more.textContent = `Showing the first ${n} of ${pdf.numPages} pages.`;
+      document.body.append(more);
+    }
+  } catch (e) {
+    msg.textContent = `Couldn’t show this PDF (${e?.message ?? e}).`;
+  }
+</script>
+</body>
+</html>

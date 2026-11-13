@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* `inline` so utilities reference var(--accent) directly — this lets a course
+   layout override --accent on a wrapper div and have it cascade (per-course theme). */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-win: var(--win);
+  --font-serif: Georgia, "Gelasio", "Times New Roman", serif;
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --color-panel-2: var(--panel-2);
+  --color-acid: var(--acid);
+}
+
+/* App chrome follows the lessons' own look (divagr.com writing pages):
+   sage paper, ultramarine accent, lime highlight, Inter / Georgia / Plex Mono. */
+:root {
+  --paper: #f4f6f2;
+  --card: #fbfcfa;
+  --ink: #19221f;
+  --muted: #596359;
+  --rule: #d0d5d1;
+  --accent: #234be7; /* ultramarine; MDX courses may still override */
+  --accent-soft: #e2e8fc;
+  --acid: #ddf59e; /* lime highlight */
+  --panel-2: #e9ede5;
+  --win: #1f7a4d;
+  --font-display: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-body: Georgia, "Gelasio", "Times New Roman", serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #12161a;
+    --card: #1a2027;
+    --ink: #e8ece8;
+    --muted: #93a093;
+    --rule: #2c343a;
+    --accent: #8aa6ff;
+    --accent-soft: #1e2a44;
+    --acid: #b7d36a;
+    --panel-2: #222a31;
+    --win: #6fcf97;
+  }
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, nav, .font-sans {
+  font-family: var(--font-sans);
+}
